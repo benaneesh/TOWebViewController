@@ -141,6 +141,9 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
 @property (nonatomic,strong) UIImage *reloadIcon;
 @property (nonatomic,strong) UIImage *stopIcon;
 
+/* Text Field for the address bar */
+@property (nonatomic, strong) UITextField *addressBarField;
+
 /* Theming attributes for generating navigation button art. */
 @property (nonatomic,strong) NSMutableDictionary *buttonThemeAttributes;
 
@@ -252,6 +255,7 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
     _buttonWidth = NAVIGATION_BUTTON_WIDTH;
     _showLoadingBar = YES;
     _showUrlWhileLoading = YES;
+    _showAddressBar = YES;
     
     //Set the initial default style as full screen (But this can be easily overridden)
     self.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -319,6 +323,27 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
     //only load the buttons if we need to
     if (self.navigationButtonsHidden == NO)
         [self setUpNavigationButtons];
+    
+    [self setupAddressbar];
+}
+
+- (void) setupAddressbar
+{
+    if (self.showAddressBar) {
+        _addressBarField = [[UITextField alloc] initWithFrame:CGRectMake(25, 7, self.navigationBar.frame.size.width - 80, 30)];
+        [_addressBarField setBorderStyle:UITextBorderStyleRoundedRect];
+        NSString *url = [self.url absoluteString];
+        url = [url stringByReplacingOccurrencesOfString:@"http://" withString:@""];
+        url = [url stringByReplacingOccurrencesOfString:@"https://" withString:@""];
+        _addressBarField.delegate = self;
+        
+        _addressBarField.text=url;
+        _addressBarField.returnKeyType = UIReturnKeyGo;
+        _addressBarField.tag = 20;
+        [self.navigationController.navigationBar addSubview:_addressBarField];
+        [self.navigationItem setBackBarButtonItem:[[UIBarButtonItem alloc]
+                                                   initWithTitle:@"A" style:UIBarButtonItemStyleBordered target:nil action:nil]];
+    }
 }
 
 - (void)setUpNavigationButtons
@@ -491,9 +516,12 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
 {
     [super viewWillDisappear:animated];
     
+    
+    
     if (self.beingPresentedModally == NO) {
         [self.navigationController setToolbarHidden:self.hideToolbarOnClose animated:animated];
         [self.navigationController setNavigationBarHidden:self.hideNavBarOnClose animated:animated];
+        [self.addressBarField removeFromSuperview];
     }
 }
 
@@ -742,7 +770,7 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
     [self refreshButtonsState];
 
     //see if we can set the proper page title at this point
-    self.title = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"];
+//    self.title = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"];
 }
 
 - (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error
@@ -1050,11 +1078,11 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
         
         //set the title to the URL until we load the page properly
         if (self.showUrlWhileLoading) {
-            NSString *url = [self.url absoluteString];
-            url = [url stringByReplacingOccurrencesOfString:@"http://" withString:@""];
-            url = [url stringByReplacingOccurrencesOfString:@"https://" withString:@""];
-            self.title = url;
-        } 
+//            NSString *url = [self.url absoluteString];
+//            url = [url stringByReplacingOccurrencesOfString:@"http://" withString:@""];
+//            url = [url stringByReplacingOccurrencesOfString:@"https://" withString:@""];
+//            self.title = url;
+        }
         
         if (self.reloadStopButton)
             [self.reloadStopButton setImage:self.stopIcon forState:UIControlStateNormal];
@@ -1079,7 +1107,7 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
     [self setLoadingProgress:1.0f];
     
     //in case it didn't succeed yet, try setting the page title again
-    self.title = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"];
+//    self.title = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"];
     
     if (self.reloadStopButton)
         [self.reloadStopButton setImage:self.reloadIcon forState:UIControlStateNormal];
@@ -1697,5 +1725,37 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
     //Try and restart device rotation
     [UIViewController attemptRotationToDeviceOrientation];
 }
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    [textField resignFirstResponder];
+    
+//    [self setUrl:[[NSURL alloc] initWithString:textField.text]];
+    [self loadWebPageFromString:textField.text];
+    return NO;
+}
+
+- (void) loadWebPageFromString:(NSString *)string {
+    NSURL *url = [NSURL URLWithString:string];
+    
+    // Check if the string has the ending charactaristics of a url and if so, add http:// to its beginning if
+    // it does not already have it
+    if ([string rangeOfString:@"."].location != NSNotFound) {
+        if (!url.scheme) {
+            url = [NSURL URLWithString:[NSString stringWithFormat:@"http://%@", string]];
+        }
+    }
+    
+    // If the string does not seem to be a valid url, format it as a google search url
+    if (!url.host) {
+        NSString *googleSearch = [string stringByReplacingOccurrencesOfString:@" " withString:@"+"];
+        url = [NSURL URLWithString:[NSString stringWithFormat:@"http://www.google.com/search?q=%@", googleSearch]];
+    }
+    
+    // fill the textfield with any changes made to the string and load the url into the webview.
+    self.addressBarField.text = [url absoluteString];
+    NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];
+    [self.webView loadRequest:request];
+}
+
 
 @end

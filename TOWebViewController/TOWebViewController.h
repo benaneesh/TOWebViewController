@@ -26,7 +26,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface TOWebViewController : UIViewController <UIWebViewDelegate>
+@interface TOWebViewController : UIViewController <UIWebViewDelegate, UITextFieldDelegate>
 
 /**
  Initializes a new `TOWebViewController` object with the specified URL.
@@ -72,6 +72,13 @@
  Default value is YES.
  */
 @property (nonatomic,assign)    BOOL showUrlWhileLoading;
+
+/**
+ Shows the AddressBar for free Browsing.
+ 
+ Default value is YES.
+ */
+@property (nonatomic,assign)    BOOL showAddressBar;
 
 /** 
  The tint colour of the page loading progress bar.
