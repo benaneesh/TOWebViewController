@@ -339,7 +339,7 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
         
         _addressBarField.text=url;
         _addressBarField.returnKeyType = UIReturnKeyGo;
-        _addressBarField.tag = 20;
+        _addressBarField.clearButtonMode = UITextFieldViewModeWhileEditing;
         [self.navigationController.navigationBar addSubview:_addressBarField];
         [self.navigationItem setBackBarButtonItem:[[UIBarButtonItem alloc]
                                                    initWithTitle:@"A" style:UIBarButtonItemStyleBordered target:nil action:nil]];
@@ -1169,7 +1169,7 @@ static const float kAfterInteractiveMaxProgressValue    = 0.9f;
         [self.webView stringByEvaluatingJavaScriptFromString:waitForCompleteJS];
         
         //see if we can set the proper page title yet
-        self.title = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"];
+//        self.title = [self.webView stringByEvaluatingJavaScriptFromString:@"document.title"];
         
         //if we're matching the view BG to the web view, update the background colour now
         if (self.hideWebViewBoundaries)
